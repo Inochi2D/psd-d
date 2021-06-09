@@ -1,0 +1,7 @@
+name "psd-d"
+description "D PSD parsing library"
+authors "Luna Nielsen"
+copyright "Copyright © 2021, Luna Nielsen"
+license "BSD 2-clause"
+dependency "imagefmt" version="~>2.1.1"
+dependency "asdf" version="~>0.7.8"

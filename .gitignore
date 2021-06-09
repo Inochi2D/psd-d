@@ -17,3 +17,6 @@ psd-d-test-*
 test.json
 *.psd
 dub.selections.json
+*.tga
+*.png
+.vscode/

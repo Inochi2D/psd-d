@@ -57,6 +57,9 @@ struct ChannelInfo {
     }
 }
 
+/**
+    Flags for a layer
+*/
 enum LayerFlags : ubyte {
     TransProtect    = 0b00000001,
     Visible         = 0b00000010,
@@ -64,6 +67,10 @@ enum LayerFlags : ubyte {
     ModernDoc       = 0b00001000,
     PixelIrrel      = 0b00010000,
 
+    /**
+        Special mask used for getting whether a layer is a group layer
+        flags & GroupMask = 24, for a layer group.
+    */
     GroupMask       = 0b00011000
 }
 
@@ -80,6 +87,68 @@ struct Layer {
         Bounding box for layer
     */
     uint[4] bounds;
+
+    /**
+        Gets the center coordinates of the layer
+    */
+    uint[2] center() {
+        return [
+            x+(width/2),
+            y+(height/2),
+        ];
+    }
+
+    /**
+        Gets the size of this layer
+    */
+    uint[2] size() {
+        return [
+            width,
+            height
+        ];
+    }
+
+    /**
+        X coordinate
+    */
+    uint x() {
+        return bounds[1];
+    }
+
+    /**
+        Y coordinate
+    */
+    uint y() {
+        return bounds[0];
+    }
+
+    /**
+        Bottom Y coordinate
+    */
+    uint bottom() {
+        return bounds[2];
+    }
+
+    /**
+        Right X coordinate
+    */
+    uint right() {
+        return bounds[3];
+    }
+
+    /**
+        Width
+    */
+    uint width() {
+        return right-x;
+    }
+
+    /**
+        Height
+    */
+    uint height() {
+        return bottom-y;
+    }
 
     /**
         Blending mode
@@ -115,5 +184,28 @@ struct Layer {
     /**
         The data of the layer
     */
+    @serdeIgnore
     ubyte[] data;
+
+    /**
+        Returns true if the layer is a group
+    */
+    bool isLayerGroup() {
+        return (flags & LayerFlags.GroupMask) == 24;
+    }
+
+    /**
+        Length of data
+    */
+    size_t dataLengthUncompressed() {
+        return this.area()*channels.length;
+    }
+
+    /**
+        Area of the layer
+    */
+    size_t area() {
+        uint[2] s = size();
+        return s[1] * s[0];
+    }
 }

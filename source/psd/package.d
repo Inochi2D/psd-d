@@ -2,6 +2,7 @@ module psd;
 
 public import psd.loader : loadPSD;
 public import psd.layer;
+import asdf;
 
 /**
     PSD Color Modes
@@ -64,6 +65,7 @@ struct PSD {
     /**
         Full image data encoded as 8-bit RGBA
     */
+    @serdeIgnore
     ubyte[] fullImage;
 }
 

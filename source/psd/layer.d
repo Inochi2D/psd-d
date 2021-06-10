@@ -191,7 +191,8 @@ struct Layer {
         Returns true if the layer is a group
     */
     bool isLayerGroup() {
-        return (flags & LayerFlags.GroupMask) == 24;
+        // TODO: Make this more robust
+        return (flags & LayerFlags.GroupMask) == 24 || (bounds[0] == 0 && bounds[1] == 0 && bounds[2] == 0 && bounds[3] == 0);
     }
 
     /**

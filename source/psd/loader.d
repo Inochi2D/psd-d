@@ -48,6 +48,7 @@ PSD loadPSD(ref File file) {
     //file.seek(file.readValue!uint, SEEK_CUR); // Skips Image Resources Section
 
     psd.loadLayerSection(file);
+    writeln(file.tell());
 
     psd.loadImageData(file);
 
@@ -67,7 +68,7 @@ void loadLayerSection(ref PSD psd, ref File file) {
     
     psd.loadLayers(file);
 
-    file.seek(pos + len, SEEK_SET);
+    file.move(pos + len + 4);
 
     // Global Layer Masks would be here
 
@@ -89,14 +90,12 @@ void loadLayers(ref PSD psd, ref File file) {
         psd.layers ~= loadLayer(file, layerIdx, layerCount);
     }
 
-    file.skip(8);
-
     foreach (layer; psd.layers) {
         file.loadLayerTexture(layer);
     }
 
     // Seek to end of the layers region, just in case.
-    file.seek(pos + len, SEEK_SET);
+    file.move(pos + len + 4);
 }
 
 ChannelInfo loadChannelInfo(ref File file) {
@@ -135,10 +134,12 @@ Layer loadLayer(ref File file, ref size_t loaded, size_t layerCount) {
     layer.name = file.readStr(file.readValue!ubyte);
     file.seek(pos + len, SEEK_SET);
 
+    writeln(layer);
+
     if (layer.name == "</Layer set>") {
         while (true) {
             Layer l = loadLayer(file, loaded, layerCount);
-            if ((l.flags & LayerFlags.GroupMask) == 24) {
+            if (l.name != "</Layer set>" && l.isLayerGroup()) {
                 layer.name = l.name;
                 break;
             }
@@ -159,20 +160,20 @@ void loadLayerTexture(ref File file, ref Layer layer) {
     // Layer groups don't have their own texture data so we'll go in to their children
     if (layer.isLayerGroup()) {
 
-        //file.skip(2 * layer.channels.length);
+        file.skip(2 * layer.channels.length);
 
         foreach (child; layer.children) {
             file.loadLayerTexture(child);
         }
 
-        //file.skip(2 * layer.channels.length);
+        file.skip(2 * layer.channels.length);
 
         return;
     }
     file.loadImageLayer(layer);
 
     import imagefmt;
-    write_image(layer.name ~ ".png", layer.width, layer.height, layer.data, 4);
+    write_image("test/"~layer.name ~ ".png", layer.width, layer.height, layer.data, 4);
 }
 
 
@@ -183,5 +184,5 @@ void loadImageData(ref PSD psd, ref File file) {
     file.loadImageRGB(psd.fullImage, psd.width, psd.height, psd.channels);
 
     import imagefmt;
-    write_image("test.png", psd.width, psd.height, psd.fullImage, 4);
+    write_image("test/test.png", psd.width, psd.height, psd.fullImage, 4);
 }

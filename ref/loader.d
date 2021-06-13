@@ -1,8 +1,7 @@
-module psd.loader;
+module ref.loader;
 import psd.layer;
 import psd.io;
 import psd;
-import psd.rle;
 import std.exception;
 import std.format;
 import std.math;

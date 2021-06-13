@@ -1,6 +1,6 @@
 module psd.parse.rle;
+import psd.parse.io;
 import psd.layer;
-import psd.io;
 import std.exception;
 import std.format;
 
@@ -10,12 +10,12 @@ import std.format;
     
     https://github.com/nothings/stb/blob/master/stb_image.h#L5907
 */
-bool decodeRLE(ref File file, ubyte* p, int pixelCount) {
+bool decodeRLE(ref Stream stream, ubyte* p, int pixelCount) {
     int count, nleft, len;
 
     count = 0;
     while ((nleft = pixelCount - count) > 0) {
-        len = file.readValue!ubyte;
+        len = stream.readValue!ubyte;
         if (len == 128) {
             // No-op.
         } else if (len < 128) {
@@ -25,7 +25,7 @@ bool decodeRLE(ref File file, ubyte* p, int pixelCount) {
                 return false; // corrupt data
             count += len;
             while (len) {
-                *p = file.readValue!ubyte;
+                *p = stream.readValue!ubyte;
                 p += 4;
                 len--;
             }
@@ -36,7 +36,7 @@ bool decodeRLE(ref File file, ubyte* p, int pixelCount) {
             len = 257 - len;
             if (len > nleft)
                 return false; // corrupt data
-            val = file.readValue!ubyte;
+            val = stream.readValue!ubyte;
             count += len;
             while (len) {
                 *p = val;

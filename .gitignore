@@ -23,3 +23,4 @@ dub.selections.json
 
 test/
 .DS_Store
+*.psd.bak

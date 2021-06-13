@@ -1,6 +1,6 @@
 module psd;
 
-public import psd.loader : loadPSD;
+public import psd.parse : parsePSD;
 public import psd.layer;
 import asdf;
 
@@ -40,7 +40,7 @@ struct PSD {
     /**
         Bits per channel
     */
-    ushort bitsPerChannel;
+    ushort bpc;
 
     /**
         Color mode of document

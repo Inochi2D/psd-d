@@ -1,4 +1,4 @@
-module psd.io;
+module psd.parse.io;
 import std.bitmanip;
 
 public import std.file;
@@ -23,19 +23,19 @@ abstract class Stream {
     abstract size_t tell();
 
     /**
+        Gets the length of the stream
+    */
+    abstract size_t length();
+
+    /**
         Sets the position in the stream
     */
-    abstract void set(ptrdiff_t pos);
+    abstract void seek(ptrdiff_t pos);
 
     /**
         Skips pos amount of bytes in the stream
     */
     abstract void skip(ptrdiff_t pos);
-
-    /**
-        Gets the length of the stream
-    */
-    abstract void length();
 
     /**
         Gets whether we're EOF
@@ -82,18 +82,23 @@ public:
     }
 
     override
-    void set(ptrdiff_t offset) {
+    void seek(ptrdiff_t offset) {
         file.seek(offset, SEEK_SET);
     }
 
     override
     void skip(ptrdiff_t offset) {
+        if (offset < 0) {
+            import std.math : abs;
+            file.seek(file.tell()-abs(offset), SEEK_SET);
+            return;
+        }
         file.seek(offset, SEEK_CUR);
     }
 
     override
-    void length() {
-        return file.length;
+    size_t length() {
+        return file.size;
     }
 }
 
@@ -111,6 +116,7 @@ T readValue(T)(ref Stream stream) if(isNumeric!T) {
 */
 T peekValue(T)(ref Stream stream) if(isNumeric!T) {
     T value = bigEndianToNative!T(stream.peek(T.sizeof)[0 .. T.sizeof]);
+    stream.skip(-T.sizeof);
     return value;
 }
 
@@ -118,5 +124,28 @@ T peekValue(T)(ref Stream stream) if(isNumeric!T) {
     Reads a string
 */
 string readStr(ref Stream stream, uint length) {
-    return cast(string) file.read(length);
+    return cast(string) stream.read(length);
+}
+
+/**
+    Peek oncomming string in stream
+*/
+string peekStr(ref Stream stream, uint length) {
+    string value = stream.readStr(length);
+    stream.skip(-cast(int)length);
+    return value;
+}
+
+/**
+    Reads a pascal string
+*/
+string readPascalStr(ref Stream stream) {
+    ubyte length = stream.read(1)[0];
+    if (length == 0) {
+        // Special case, empty strings are 2 bytes long!
+        stream.skip(1);
+        return "";
+    }
+
+    return stream.readStr(length);
 }

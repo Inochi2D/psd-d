@@ -56,7 +56,6 @@ void parseImageResources(ref ParserContext ctx) {
         
         // Add
         ctx.imageResources ~= block;
-        writeln(ctx.tell, " ", ctx.peekStr(4), " ", length);
     }
 
     // Skip back since that wasn't 8BIM

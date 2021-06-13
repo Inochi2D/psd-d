@@ -1,4 +1,4 @@
-module ref.loader;
+module psd.old.loader;
 import psd.layer;
 import psd.io;
 import psd;

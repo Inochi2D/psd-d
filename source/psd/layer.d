@@ -86,7 +86,35 @@ struct Layer {
     /**
         Bounding box for layer
     */
-    uint[4] bounds;
+    union {
+        struct {
+
+            /**
+                X coordinate of layer
+            */
+            uint y;
+
+            /**
+                Y coordinate of layer
+            */
+            uint x;
+
+            /**
+                Bottom Y coordinate of layer
+            */
+            uint bottom;
+
+            /**
+                Right X coordinate of layer
+            */
+            uint right;
+        }
+
+        /**
+            Bounds as array
+        */
+        uint[4] bounds;
+    }
 
     /**
         Gets the center coordinates of the layer
@@ -106,34 +134,6 @@ struct Layer {
             width,
             height
         ];
-    }
-
-    /**
-        X coordinate
-    */
-    uint x() {
-        return bounds[1];
-    }
-
-    /**
-        Y coordinate
-    */
-    uint y() {
-        return bounds[0];
-    }
-
-    /**
-        Bottom Y coordinate
-    */
-    uint bottom() {
-        return bounds[2];
-    }
-
-    /**
-        Right X coordinate
-    */
-    uint right() {
-        return bounds[3];
     }
 
     /**
@@ -177,11 +177,6 @@ struct Layer {
     LayerFlags flags;
 
     /**
-        Layers that are the children of this layer
-    */
-    Layer[] children;
-
-    /**
         The data of the layer
     */
     @serdeIgnore
@@ -195,6 +190,13 @@ struct Layer {
     }
 
     /**
+        Is the layer useful?
+    */
+    bool isLayerUseful() {
+        return !isLayerGroup() && (width != 0 && height != 0);
+    }
+
+    /**
         Length of data
     */
     size_t dataLengthUncompressed() {
@@ -202,10 +204,18 @@ struct Layer {
     }
 
     /**
+        Gets total data count
+    */
+    size_t totalDataCount() {
+        uint length;
+        foreach(channel; channels) length += channel.dataLength;
+        return length;
+    }
+
+    /**
         Area of the layer
     */
     size_t area() {
-        uint[2] s = size();
-        return s[1] * s[0];
+        return width * height;
     }
 }

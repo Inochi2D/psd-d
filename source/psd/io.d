@@ -13,6 +13,15 @@ T readValue(T)(ref File file) {
 }
 
 /**
+    Reads file value in big endian fashion
+*/
+T peekValue(T)(ref File file) {
+    T val = file.readValue!T;
+    file.skip(-cast(ptrdiff_t)T.sizeof);
+    return val;
+}
+
+/**
     Reads a string
 */
 string readStr(ref File file, uint length) {
@@ -28,15 +37,16 @@ string peekStr(ref File file, uint length) {
     return val;
 }
 
-/**
-    Peeks a value
-*/
-T peekValue(T)(ref File file) {
-    T value = file.readValue(file);
-    file.seek(-T.sizeof, SEEK_CUR);
-    return value;
-}
 
+string readPascalStr(ref File file) {
+    uint length = file.readValue!ubyte;
+    if (length == 0) {
+        file.skip(1);
+        return "";
+    }
+
+    return file.readStr(length);
+}
 /**
     Reads values
 */
@@ -47,15 +57,15 @@ ubyte[] read(ref File file, size_t length) {
 /**
     Peeks values
 */
-ubyte[] peek(ref File file, size_t length) {
+ubyte[] peek(ref File file, ptrdiff_t length) {
     ubyte[] result = file.read(length);
-    file.seek(-length, SEEK_CUR);
+    file.seek(-cast(ptrdiff_t)length, SEEK_CUR);
     return result;
 }
 
 /**
     Skips bytes
 */
-void skip(ref File file, size_t length) {
-    file.seek(length, SEEK_CUR);
+void skip(ref File file, ptrdiff_t length) {
+    file.seek(cast(ptrdiff_t)length, SEEK_CUR);
 }

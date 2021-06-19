@@ -5,5 +5,5 @@ import std.file : write;
 
 void main()
 {
-	write("test.json", serializeToJsonPretty(loadPSD("luna.psd")));
+	write("test/test.json", serializeToJsonPretty(loadPSD("luna.psd")));
 }

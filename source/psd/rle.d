@@ -50,49 +50,38 @@ bool decodeRLE(ref File file, ubyte* p, int pixelCount) {
 }
 
 /**
-    Alternate RLE function from Paint.NET's PSD plugin
-    
-    (This function is based on MIT licensed code)
+    Taken from psd_sdk
+
+    https://github.com/MolecularMatters/psd_sdk/blob/master/src/Psd/PsdDecompressRle.cpp#L18
 */
-int decodeRLE(ref File file, ref ubyte[] buffer, int offset, int count) {
-    if (!checkBufferRounds(buffer, offset, count)) return 0;
-    if (count == 0) return 0;
+void decodeRLE(ubyte* src, uint srcSize, ubyte* dest, uint size) {
+    import core.stdc.string : memset, memcpy;
 
-    int bytesLeft = count;
-    int bufferIdx = offset;
-    ubyte* p = buffer.ptr;
-    while(bytesLeft > 0) {
-        byte counter = file.readValue!byte;
+    uint bytesRead = 0;
+    uint offset = 0;
+    while (offset < size) {
+        enforce(offset < srcSize, "Malformed RLE data encounter (%s < %s)".format(offset, srcSize));
 
-        if (counter > 0) {
-            int readLength = counter+1;
-            if (bytesLeft < readLength) {
-                throw new Exception("Raw packet overruns the decode window");
-            }
+        uint tag = *src++;
+        ++bytesRead;
 
-            // Read in to buffer
-            p[bufferIdx..bufferIdx+readLength] = file.read(readLength);
-            bufferIdx += readLength;
-            bytesLeft -= readLength;
-        } else if (counter > -128) {
-            int runLength = 1 - counter;
-            byte value = file.read(1)[0];
-            if (runLength > bytesLeft) {
-                throw new Exception("RLE packet overruns the decode window");
-            }
+        if (tag == 0x80) {
+            // NO-OP
+        } else if (tag > 0x80) {
+            uint count = 257 - tag;
 
-            auto ptrEnd = p + runLength;
-            while(p < ptrEnd) {
-                *p = value;
-                p++;
-            }
-
-            bufferIdx += runLength;
-            bytesLeft -= runLength;
+            memset(dest + offset, *src++, count);
+            offset += count;
+            ++bytesRead;
+        } else {
+            uint count = tag+1;
+            memcpy(dest+offset, src, count);
+            
+            src += count;
+            offset += count;
+            bytesRead += count;
         }
     }
-
-    return count - bytesLeft;
 }
 
 /**
@@ -160,6 +149,7 @@ void loadImageRGB(ref File file, ref ubyte[] array, int width, int height, ushor
 void loadImageLayer(ref File file, ref Layer layer) {
     ushort compression = file.readValue!ushort;
     enforce(compression < 2, "Unsupported compression scheme %s".format(compression));
+    writeln(compression);
 
     size_t pixelCount = layer.width*layer.height;
 
@@ -182,14 +172,31 @@ void loadImageLayer(ref File file, ref Layer layer) {
         break;
 
     case 1:
+        writeln("readlayer");
 
-        // Skip length value
-        // file.skip(layer.height * layer.channels.length * 2);
+        foreach(channel; 0..4) {
+            uint size = layer.width*layer.height;
+            ubyte[] planarData = new ubyte[size*2];
 
-        // Go through every channel and fill it out
-        // TODO: Support more than RGBA
-        file.loadImageLayerRLE(layer);
+            uint rleDataSize = 0;
+            foreach(i; 0..layer.height) {
+                rleDataSize += file.readValue!ushort;
+            }
+
+            writeln("rle=", rleDataSize);
+
+            ubyte* p = layer.data.ptr + channel;
+            if (channel >= layer.channels.length) {
+                for (int i = 0; i < pixelCount; i++)
+                    *p = (channel == 3 ? 255 : 0), p += 4;
+            } else {
+                ubyte[] rleData = file.read(rleDataSize);
+
+                decodeRLE(rleData.ptr, rleDataSize, planarData.ptr, size);
+                // if (!file.decodeRLE(p, cast(int)pixelCount)) writeln("Bad RLE data");
+            }
+        }
         break;
-    default: assert(0);
+    default: enforce(0, "Unsupported ZIP compression");
     }
 }

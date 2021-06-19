@@ -69,3 +69,10 @@ struct PSD {
     ubyte[] fullImage;
 }
 
+/**
+    Quantize value
+*/
+uint quantize(uint value, uint unit) {
+    import std.math : quantize;
+    return cast(uint)quantize(cast(float)value, cast(float)unit);
+}

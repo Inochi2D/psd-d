@@ -89,7 +89,8 @@ void loadLayers(ref PSD psd, ref File file) {
         psd.layers ~= loadLayer(file, layerIdx, layerCount);
     }
 
-    file.skip(8);
+    // file.skip(8);
+    file.seek(21654);
 
     foreach (layer; psd.layers) {
         file.loadLayerTexture(layer);
@@ -128,51 +129,41 @@ Layer loadLayer(ref File file, ref size_t loaded, size_t layerCount) {
     layer.flags = file.readValue!LayerFlags;
 
     file.skip(1); // Skip 0 filler
-    uint len = file.readValue!uint;
+
     uint pos = cast(uint) file.tell();
-    file.skip(file.readValue!uint);
-    file.skip(file.readValue!uint);
-    layer.name = file.readStr(file.readValue!ubyte);
-    file.seek(pos + len, SEEK_SET);
+    uint extraDataLength = file.readValue!uint;
 
-    if (layer.name == "</Layer set>") {
-        while (true) {
-            Layer l = loadLayer(file, loaded, layerCount);
-            if ((l.flags & LayerFlags.GroupMask) == 24) {
-                layer.name = l.name;
-                break;
-            }
+    uint layerMaskDataLength = file.readValue!uint;
+    file.skip(layerMaskDataLength); // Skip Layer Mask Data
 
-            layer.children ~= l;
-        }
-    }
+    uint layerBlendingRangesDataLength = file.readValue!uint;
+    file.skip(layerBlendingRangesDataLength); // Skip Blending Ranges
+    
+    uint nameLength = file.peekValue!ubyte;
+    layer.name = file.readPascalStr();
+
+    uint extraLayerInfoSize = extraDataLength - layerMaskDataLength - layerBlendingRangesDataLength - nameLength - 8u;
+    file.skip(extraLayerInfoSize-1);
+
     return layer;
 }
 
 void loadLayerTexture(ref File file, ref Layer layer) {
 
-    //writeln(file.tell());
-    writeln(layer.name, " ", layer.width, " ", layer.height, " ", layer.channels);
+    writeln(file.tell());
+    writeln(layer);
+
+    if (!layer.isLayerUseful) {
+        //file.skip(layer.totalDataCount);
+        return;
+    }
 
     layer.data = new ubyte[layer.dataLengthUncompressed()];
 
-    // Layer groups don't have their own texture data so we'll go in to their children
-    if (layer.isLayerGroup()) {
-
-        //file.skip(2 * layer.channels.length);
-
-        foreach (child; layer.children) {
-            file.loadLayerTexture(child);
-        }
-
-        //file.skip(2 * layer.channels.length);
-
-        return;
-    }
     file.loadImageLayer(layer);
 
     import imagefmt;
-    write_image(layer.name ~ ".png", layer.width, layer.height, layer.data, 4);
+    write_image("test/" ~ layer.name ~ ".png", layer.width, layer.height, layer.data, 4);
 }
 
 
@@ -183,5 +174,5 @@ void loadImageData(ref PSD psd, ref File file) {
     file.loadImageRGB(psd.fullImage, psd.width, psd.height, psd.channels);
 
     import imagefmt;
-    write_image("test.png", psd.width, psd.height, psd.fullImage, 4);
+    write_image("test/test.png", psd.width, psd.height, psd.fullImage, 4);
 }

@@ -92,6 +92,38 @@ struct ParserContext {
         return stream.readValue!T;
     }
 
+    
+    /**
+        Rounds numToRound up to a multiple of multipleOf
+    */
+    pragma(inline, true)
+	T roundUpToMultiple(T)(T numToRound, T multipleOf)
+	{
+		// make sure that this function is only called for unsigned types, and ensure that we want to round to a power-of-two
+		//static_assert(util::IsUnsigned<T>::value == true, "T must be an unsigned type.");
+		//PSD_ASSERT(IsPowerOfTwo(multipleOf), "Expected a power-of-two.");
+
+		return (numToRound + (multipleOf - 1u)) & ~(multipleOf - 1u);
+	}
+
+    /**
+        Proxy for stream.readValue, but padds the result.
+    */
+    pragma(inline, true)
+    T readPaddedValue(T)(T multipleOf = 2, T addTo = 0) {
+        T value = stream.readValue!T;
+        return cast(T)roundUpToMultiple(value + addTo, multipleOf);
+    }
+
+    /**
+        Proxy for stream.read
+    */
+    pragma(inline, true)
+    ubyte[] readData(size_t length) {
+        return stream.read(length);
+    }
+
+
     /**
         Proxy for stream.readStr
     */
@@ -141,4 +173,12 @@ struct ParserContext {
         return stream.tell();
     }
 
+
+    /**
+        Proxy for stream.size
+    */
+    pragma(inline, true)
+    size_t length() {
+        return stream.length();
+    }
 }

@@ -1,3 +1,10 @@
+/**
+    This PSD file parser
+
+    This is more or less based on psd_sdk
+
+    Various features of PSD_SDK are left out for simplicity
+*/
 module psd.parser;
 import utils.io;
 import utils;
@@ -111,7 +118,7 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, uint dataLength) {
     layerMaskSection.hasTransparencyMask = false;
 
     if (dataLength != 0) {
-        
+
         // Read the layer count. If it is a negative number, its absolute value is the number of the layers and the
         // first alpha channel contains the transparency data for the merged result.
         // this will also be reflected in the channelCount of the document.

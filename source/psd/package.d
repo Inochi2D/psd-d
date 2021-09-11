@@ -26,29 +26,11 @@ struct Section {
 */
 struct PSD {
     /**
-        Amount of channels in file
+        Whether the file is actually a psb rather than psd file.
     */
-    short channels;
+    bool psbFile;
 
-    /**
-        Width of document
-    */
-    uint width;
-
-    /**
-        Height of document
-    */
-    uint height;
-
-    /**
-        Bits per channel
-    */
-    ushort bitsPerChannel;
-
-    /**
-        Color mode of document
-    */
-    ColorMode colorMode;
+    PSD_Header header;
     
 	/**
         Color mode data section.

@@ -226,6 +226,8 @@ void parseImageResources(ref ParserContext ctx) {
 			case ImageResourceType.MAC_PRINT_MANAGER_INFO:
 			case ImageResourceType.WINDOWS_DEVMODE:
 				// we are currently not interested in this resource type, skip it
+			default:
+				// this is a resource we know nothing about, so skip it
 				ctx.skip(resourceSize);
 				break;
 			
@@ -240,7 +242,7 @@ void parseImageResources(ref ParserContext ctx) {
 				if (ctx.psd.imageResourcesData.alphaChannels.length == 0)
 				{
 					// note that this assumes RGB mode
-					const uint channelCount = ctx.psd.channels - 3;
+					const uint channelCount = ctx.psd.header.channels - 3;
 					ctx.psd.imageResourcesData.alphaChannelCount = channelCount;
 					ctx.psd.imageResourcesData.alphaChannels.length = channelCount;
 				}
@@ -324,7 +326,7 @@ void parseImageResources(ref ParserContext ctx) {
 				if (ctx.psd.imageResourcesData.alphaChannels.length == 0)
 				{
 					// note that this assumes RGB mode
-					const uint channelCount = ctx.psd.channels - 3;
+					const uint channelCount = ctx.psd.header.channels - 3;
 					ctx.psd.imageResourcesData.alphaChannelCount = channelCount;
 					ctx.psd.imageResourcesData.alphaChannels.length = channelCount;
 				}
@@ -348,11 +350,6 @@ void parseImageResources(ref ParserContext ctx) {
 				}
 			}
 			break;
-			
-			default:
-				// this is a resource we know nothing about, so skip it
-				ctx.skip(resourceSize);
-				break;
         }
 
 		leftToRead -= 10 + nameLength + resourceSize;

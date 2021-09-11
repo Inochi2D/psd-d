@@ -8,5 +8,8 @@ import psd.parse.parser;
 void main()
 {
 	writeln(getcwd());
-	write("test/psd.json", serializeToJsonPretty(parsePSDToCtx("luna.psd")));
+	auto ctx = parsePSDToCtx("luna.psd");
+	writeln("Hello");
+	auto prettyJson = serializeToJsonPretty(ctx);
+	write("psd.json", prettyJson);
 }

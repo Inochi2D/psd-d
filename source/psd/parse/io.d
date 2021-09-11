@@ -149,3 +149,18 @@ string readPascalStr(ref Stream stream) {
 
     return stream.readStr(length);
 }
+
+/**
+    Reads a Unicode string, well, eventually
+*/
+//string readUnicodeStr(ref Stream stream) {
+//    wstring utf16str;
+//    ubyte length = stream.read(2)[0];
+//    if (length == 0) {
+//        // Special case, empty strings are 2 bytes long!
+//        stream.skip(1);
+//        return "";
+//    }
+//
+//    return stream.readStr(length);
+//}

@@ -17,28 +17,114 @@ enum ColorMode : ushort {
     Lab = 9
 }
 
+
+/**
+    Will read the signature from the header.
+*/
+pragma(inline, true)
+char[4] readSignature(ref ParserContext ctx) {
+    char[4] signature;
+
+    foreach (i; 0 .. 4)
+        signature[i] = ctx.readValue!byte;
+
+    return signature;
+}
+
+/**
+    Will read the reserve bytes from the header.
+*/
+pragma(inline, true)
+char[6] readReserveBytes(ref ParserContext ctx) {
+    char[6] reserve;
+
+    foreach (i; 0 .. 6)
+        reserve[i] = ctx.readValue!byte;
+
+    return reserve;
+}
+
+
+
+struct PSD_Header {
+    /**
+        Signature of the file
+    */
+    char[4] signature;
+
+    /**
+        Amount of channels in file
+    */
+    short versionNo;
+
+    /**
+        Reserved bytes, should be zero
+    */
+    char[6] reserved;
+
+    /**
+        Amount of channels in file
+    */
+    short channels;
+
+    /**
+        Width of document
+    */
+    uint width;
+
+    /**
+        Height of document
+    */
+    uint height;
+
+    /**
+        Bits per channel
+    */
+    ushort bitsPerChannel;
+
+    /**
+        Color mode of document
+    */
+    ColorMode colorMode;
+}
+
 /**
     Parses PSD header
 */
 void parseHeader(ref ParserContext ctx) {
+    PSD_Header header;
+    header.signature = readSignature(ctx);
+    byte[4] signatureBytes = [ '8','B','P','S' ];
 
     // Make sure that this file has a photoshop header and is the correct version
-    enforce(ctx.readStr(4) == "8BPS", "Invalid PSD file signature");
-    enforce(ctx.readValue!ushort == 1, "Invalid PSD file version");
-    enforce(ctx.readStr(6) == "\0\0\0\0\0\0", "Invalid PSD reserve bytes.");
+    enforce(signatureBytes == header.signature, "Invalid PSD file signature");
+
+    auto versionNo = ctx.readValue!ushort;
+    enforce((1 == versionNo) || (2 == versionNo), "Invalid PSD or PSB file version");
+    
+    if (2 == versionNo)
+        ctx.psd.psbFile = true;
+    else 
+        ctx.psd.psbFile = false;
+
+    header.reserved = readReserveBytes(ctx);
+    byte[6] reserveBytes = [ '\0','\0','\0','\0','\0','\0' ];
+    enforce(reserveBytes == header.reserved, "Invalid PSD reserve bytes.");
 
     // Read channels
-    ctx.psd.channels = ctx.readValue!ushort;
+    header.channels = ctx.readValue!ushort;
     
     // NOTE: Photoshop flips width/height order for some reason
-    ctx.psd.height = ctx.readValue!uint;
-    ctx.psd.width = ctx.readValue!uint;
+    header.height = ctx.readValue!uint;
+    header.width = ctx.readValue!uint;
 
-    ctx.psd.bitsPerChannel = ctx.readValue!ushort;
-    ctx.psd.colorMode = cast(ColorMode)ctx.readValue!ushort;
+    header.bitsPerChannel = ctx.readValue!ushort;
+    header.colorMode = cast(ColorMode)ctx.readValue!ushort;
+
+    ctx.psd.header = header;
 
     // TODO: Support maybe CMYK
-    enforce(ctx.psd.colorMode == ColorMode.RGB, "Only RGB/RGBA files are supported currently!");
+    enforce(header.colorMode == ColorMode.RGB, "Only RGB/RGBA files are supported currently!");
 
 	ctx.psd.colorModeDataSection.length = ctx.readValue!uint;
     ctx.psd.colorModeDataSection.offset = cast(ulong)ctx.tell();

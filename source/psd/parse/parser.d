@@ -26,7 +26,12 @@ PSD parsePSD(string file) {
 ParserContext parsePSDToCtx(string file) {
     auto f = File(file, "r");
     scope(exit) f.close();
-    return parsePSDToCtx(new FileStream(f));
+    auto stream = new FileStream(f);
+    writeln("Made a stream.");
+    auto context = parsePSDToCtx(stream);
+    writeln("Parsed");
+
+    return context;
 }
 
 /**
@@ -38,16 +43,15 @@ ParserContext parsePSDToCtx(Stream stream) {
 
     // Parse the header
     parseHeader(ctx);
-
-    // The color mode data section is useless for us
-    ctx.skip(ctx.readValue!uint);
-
+    
     // Parse image resources (need it for layer tags)
     parseImageResources(ctx);
+    writeln("Parsed image resources.");
 
     // Layer & Mask info
     // This is where the layers we need are!!
     parseLayerMaskInfo(ctx);
+    writeln("Parsed layer mask info.");
     
     return ctx;
 }
@@ -91,7 +95,6 @@ struct ParserContext {
     T readValue(T)() {
         return stream.readValue!T;
     }
-
     
     /**
         Rounds numToRound up to a multiple of multipleOf

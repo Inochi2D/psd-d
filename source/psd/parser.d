@@ -12,6 +12,14 @@ import psd;
 import std.exception;
 
 /**
+    Parses document
+*/
+PSD parseDocument(string fileName) {
+    auto file = File(fileName, "r");
+    return parseDocument(file);
+}
+
+/**
     Parses a Photoshop Document
 */
 PSD parseDocument(ref File file) {

@@ -58,6 +58,33 @@ struct ChannelInfo {
 }
 
 /**
+    The different types of layer
+*/
+enum LayerType {
+    /**
+        Any other type of layer
+    */
+    Any = 0,
+
+    /**
+        An open folder
+    */
+    OpenFolder = 1,
+
+    /**
+        A closed folder
+    */
+    ClosedFolder = 2,
+
+    /**
+        A bounding section divider
+    
+        Hidden in the UI
+    */
+    SectionDivider = 3
+}
+
+/**
     Flags for a layer
 */
 enum LayerFlags : ubyte {
@@ -92,28 +119,28 @@ struct Layer {
             /**
                 X coordinate of layer
             */
-            uint y;
+            int y;
 
             /**
                 Y coordinate of layer
             */
-            uint x;
+            int x;
 
             /**
                 Bottom Y coordinate of layer
             */
-            uint bottom;
+            int bottom;
 
             /**
                 Right X coordinate of layer
             */
-            uint right;
+            int right;
         }
 
         /**
             Bounds as array
         */
-        uint[4] bounds;
+        int[4] bounds;
     }
 
     /**
@@ -183,10 +210,15 @@ struct Layer {
     ubyte[] data;
 
     /**
+        The type of layer
+    */
+    LayerType type;
+
+    /**
         Returns true if the layer is a group
     */
     bool isLayerGroup() {
-        return (flags & LayerFlags.GroupMask) == 24;
+        return type == LayerType.OpenFolder || type == LayerType.ClosedFolder;
     }
 
     /**
@@ -218,4 +250,40 @@ struct Layer {
     size_t area() {
         return width * height;
     }
+}
+
+/**
+    A layer mask section
+*/
+struct LayerMaskSection {
+
+    /**
+        The layers in the section
+    */
+    Layer[] layers;
+
+    /**
+        The amount of layers in the section
+    */
+    uint layerCount;
+
+    /**
+        The colorspace of the overlay (unused)
+    */
+    ushort overlayColorSpace;
+    
+    /**
+        The global opacity level (0 = transparent, 100 = opaque)
+    */
+    ushort opacity;
+    
+    /**
+        The global layer kind
+    */
+    ubyte kind;
+
+    /**
+        Whether the layer data contains a transparency mask
+    */
+    bool hasTransparencyMask;
 }

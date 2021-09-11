@@ -1,6 +1,7 @@
 module psd;
+import std.stdio;
 
-public import psd.loader : loadPSD;
+public import psd.parser : parseDocument;
 public import psd.layer;
 import asdf;
 
@@ -22,6 +23,21 @@ enum ColorMode : ushort {
     A photoshop file
 */
 struct PSD {
+package(psd):
+    size_t colorModeDataSectionOffset;
+    size_t colorModeDataSectionLength;
+
+    size_t imageResourceSectionOffset;
+    size_t imageResourceSectionLength;
+
+    size_t layerMaskInfoSectionOffset;
+    size_t layerMaskInfoSectionLength;
+
+    size_t imageDataSectionOffset;
+    size_t imageDataSectionLength;
+
+public:
+
     /**
         Amount of channels in file
     */
@@ -67,12 +83,4 @@ struct PSD {
     */
     @serdeIgnore
     ubyte[] fullImage;
-}
-
-/**
-    Quantize value
-*/
-uint quantize(uint value, uint unit) {
-    import std.math : quantize;
-    return cast(uint)quantize(cast(float)value, cast(float)unit);
 }

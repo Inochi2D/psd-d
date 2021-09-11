@@ -1,4 +1,5 @@
-module psd.io;
+module utils.io;
+import utils;
 import std.bitmanip;
 
 public import std.file;
@@ -38,15 +39,19 @@ string peekStr(ref File file, uint length) {
 }
 
 
-string readPascalStr(ref File file) {
+string readPascalStr(ref File file, uint readTo = 0) {
     uint length = file.readValue!ubyte;
+    uint extra = readTo > 0 ? readTo-length : 0;
     if (length == 0) {
         file.skip(1);
         return "";
     }
 
-    return file.readStr(length);
+    string str = file.readStr(length);
+    file.skip(extra);
+    return str;
 }
+
 /**
     Reads values
 */

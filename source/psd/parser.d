@@ -11,6 +11,7 @@ import utils;
 import psd;
 import std.exception;
 import std.format;
+import std.string;
 
 /**
     Parses document
@@ -32,7 +33,11 @@ PSD parseDocument(ref File file) {
 
     // Parse the various sections
     parseColorModeSection(file, psd);
-    parseImageResourceSection(file, psd);
+    //parseImageResourceSection(file, psd);
+    psd.imageResourceSectionOffset = file.tell();
+    psd.imageResourceSectionLength = file.readValue!uint;
+    file.skip(psd.imageResourceSectionLength);
+    
     parseLayerMaskInfoSection(file, psd);
     parseImageDataSectionOffset(file, psd);
 
@@ -440,7 +445,7 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
             }
 
             auto blendModeSignature = file.readStr(4);
-            enforce(blendModeSignature == "8BPS", "Layer mask info section seems to be corrupt, signature does not match \"8BIM\".");
+            enforce(blendModeSignature == "8BIM", "Layer mask info section seems to be corrupt, signature does not match \"8BIM\". (was \"%s\")".format(blendModeSignature));
 
             //layer.blendModeKey = cast(BlendingMode)file.readStr(4);
             layer.blendModeKey = file.readValue!uint;
@@ -465,7 +470,7 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
             if (layerMaskDataLength != 0)
             {
                 // there can be at most two masks, one layer and one vector mask
-                MaskData[2] maskData = {};
+                MaskData[2] maskData;
                 uint maskCount = 1u;
 
                 double layerFeather = 0.0;
@@ -549,7 +554,9 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
             file.skip(layerBlendingRangesDataLength);
 
             // the layer name is stored as pascal string, padded to a multiple of 4
-            const ubyte nameLength = file.readValue!ubyte;
+            // we peek here as the actual calculation happens inside readPascalStr
+            // TODO: make this more pretty?
+            const ubyte nameLength = file.peekValue!ubyte;
             const uint paddedNameLength = roundUpToMultiple(nameLength + 1u, 4u);
 
             layer.name = file.readPascalStr(paddedNameLength - 1u);
@@ -562,7 +569,7 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
             while (toRead > 0)
             {
                 const string signature = file.readStr(4);
-                enforce(signature == "8BIM", "Additional Layer Information section seems to be corrupt, signature does not match \"8BIM\".");
+                enforce(signature == "8BIM", "Additional Layer Information section seems to be corrupt, signature does not match \"8BIM\". (was \"%s\")".format(signature));
 
                 const string key = file.readStr(4);
 
@@ -585,13 +592,14 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
                     // 2-byte UTF16 Unicode data without the terminating null.
                     const uint characterCountWithoutNull = file.readValue!uint;
                     wstring utf16Name;
-                    //layer.utf16Name = memoryUtil::AllocateArray<ushort>(allocator, characterCountWithoutNull + 1u);
-
                     for (uint c = 0u; c < characterCountWithoutNull; ++c)
                     {
                         utf16Name ~= cast(wchar)file.readValue!ushort;
                     }
-                    //layer.utf16Name[characterCountWithoutNull] = 0u;
+
+                    // If there's a unicode name we may as well use that here.
+                    import std.utf : toUTF8;
+                    layer.name = utf16Name.toUTF8;
 
                     // skip possible padding bytes
                     file.skip(length - 4u - characterCountWithoutNull * ushort.sizeof);
@@ -603,7 +611,9 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
 
                 toRead -= 3*uint.sizeof + length;
             }
+            writeln(file.tell(), ": ", layer.name, " : ", layer.type);
         }
+
 
         // walk through the layers and channels, but don't extract their data just yet. only save the file offset for extracting the
         // data later.

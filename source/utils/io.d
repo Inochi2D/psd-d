@@ -1,6 +1,7 @@
 module utils.io;
 import utils;
 import std.bitmanip;
+import std.string;
 
 public import std.file;
 public import std.stdio;
@@ -38,7 +39,9 @@ string peekStr(ref File file, uint length) {
     return val;
 }
 
-
+/**
+    Reads a pascal string
+*/
 string readPascalStr(ref File file, uint readTo = 0) {
     uint length = file.readValue!ubyte;
     uint extra = readTo > 0 ? readTo-length : 0;
@@ -49,7 +52,7 @@ string readPascalStr(ref File file, uint readTo = 0) {
 
     string str = file.readStr(length);
     file.skip(extra);
-    return str;
+    return str[0..length];
 }
 
 /**

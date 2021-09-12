@@ -36,13 +36,162 @@ enum BlendingMode : string {
 }
 
 /**
+    A struct representing a layer mask as stored in the layers of the Layer Mask section.
+*/
+struct LayerMask
+{
+	/**
+        Top coordinate of the rectangle that encloses the mask.
+    */
+    int top;
+
+	/**
+        Left coordinate of the rectangle that encloses the mask.
+    */
+    int left;
+
+	/**
+        Bottom coordinate of the rectangle that encloses the mask.
+    */
+    int bottom;
+
+	/**
+        Right coordinate of the rectangle that encloses the mask.
+    */
+    int right;
+
+
+	/**
+        The offset from the start of the file where the channel's data is stored.
+    */
+    ulong fileOffset;
+
+
+	/**
+        Planar data, having a size of (right-left)*(bottom-top)*bytesPerPixel.
+    */
+    ubyte[] data;
+
+
+	/**
+        The mask's feather value.
+    */
+    double feather;
+
+	/**
+        The mask's density value.
+    */
+    ubyte density;
+
+	/**
+        The mask's default color regions outside the enclosing rectangle.
+    */
+    ubyte defaultColor;
+};
+
+/**
+    A struct representing a vector mask as stored in the layers of the Layer Mask section.
+*/
+struct VectorMask
+{
+	/**
+        Top coordinate of the rectangle that encloses the mask.
+    */
+    int top;
+
+	/**
+        Left coordinate of the rectangle that encloses the mask.
+    */
+    int left;
+
+	/**
+        Bottom coordinate of the rectangle that encloses the mask.
+    */
+    int bottom;
+
+	/**
+        Right coordinate of the rectangle that encloses the mask.
+    */
+    int right;
+
+
+	/**
+        The offset from the start of the file where the channel's data is stored.
+    */
+    ulong fileOffset;
+
+
+	/**
+        Planar data, having a size of (right-left)*(bottom-top)*bytesPerPixel.
+    */
+    ubyte[] data;
+
+
+	/**
+        The mask's feather value.
+    */
+    double feather;
+
+	/**
+        The mask's density value.
+    */
+    ubyte density;
+
+	/**
+        The mask's default color regions outside the enclosing rectangle.
+    */
+    ubyte defaultColor;
+};
+
+/**
+    Information about Masks
+*/
+struct MaskData
+{
+    /**
+        Top X coordinate of mask
+    */
+    int top;
+
+    /**
+        Left X coordinate of mask
+    */
+    int left;
+
+    /**
+        Bottom Y coordinate of mask
+    */
+    int bottom;
+
+    /**
+        Right X coordinate of mask
+    */
+    int right;
+    
+    /**
+        Default color of mask
+    */
+    ubyte defaultColor;
+    
+    /**
+        If the mask is a vector mask or not
+    */
+    bool isVectorMask;
+};
+
+/**
     Information about color channels
 */
 struct ChannelInfo {
     /**
-        ID of channel
+        Type of channel
     */
-    short id;
+    short type;
+
+    /**
+        Offset into the file of the color channel
+    */
+    uint fileOffset;
 
     /**
         Length of data in color channel
@@ -53,7 +202,7 @@ struct ChannelInfo {
         Gets whether the channel is a mask
     */
     bool isMask() {
-        return id < 0;
+        return type < 0;
     }
 }
 
@@ -106,6 +255,11 @@ enum LayerFlags : ubyte {
 */
 struct Layer {
     /**
+        Parent of layer
+    */
+    //Layer* parent;
+
+    /**
         Name of layer
     */
     string name;
@@ -117,14 +271,14 @@ struct Layer {
         struct {
 
             /**
-                X coordinate of layer
+                Top X coordinate of layer
             */
-            int y;
+            int top;
 
             /**
-                Y coordinate of layer
+                Left X coordinate of layer
             */
-            int x;
+            int left;
 
             /**
                 Bottom Y coordinate of layer
@@ -144,48 +298,25 @@ struct Layer {
     }
 
     /**
-        Gets the center coordinates of the layer
-    */
-    uint[2] center() {
-        return [
-            x+(width/2),
-            y+(height/2),
-        ];
-    }
-
-    /**
-        Gets the size of this layer
-    */
-    uint[2] size() {
-        return [
-            width,
-            height
-        ];
-    }
-
-    /**
-        Width
-    */
-    uint width() {
-        return right-x;
-    }
-
-    /**
-        Height
-    */
-    uint height() {
-        return bottom-y;
-    }
-
-    /**
         Blending mode
     */
-    BlendingMode blending;
+    //BlendingMode blendModeKey;
+    uint blendModeKey;
 
     /**
         Channels in layer
     */
     ChannelInfo[] channels;
+    
+    /**
+        The layer's user mask, if any.
+    */
+	LayerMask[] layerMask;
+    
+    /**
+        The layer's vector mask, if any.
+    */
+	VectorMask[] vectorMask;
 
     /**
         Opacity of the layer
@@ -213,6 +344,45 @@ struct Layer {
         The type of layer
     */
     LayerType type;
+
+    /**
+        Whether the layer is visible or not
+    */
+    bool isVisible;
+
+    /**
+        Gets the center coordinates of the layer
+    */
+    uint[2] center() {
+        return [
+            left+(width/2),
+            top+(height/2),
+        ];
+    }
+
+    /**
+        Gets the size of this layer
+    */
+    uint[2] size() {
+        return [
+            width,
+            height
+        ];
+    }
+
+    /**
+        Width
+    */
+    uint width() {
+        return right-left;
+    }
+
+    /**
+        Height
+    */
+    uint height() {
+        return bottom-top;
+    }
 
     /**
         Returns true if the layer is a group
@@ -265,25 +435,25 @@ struct LayerMaskSection {
     /**
         The amount of layers in the section
     */
-    uint layerCount;
+    uint layerCount = 0;
 
     /**
         The colorspace of the overlay (unused)
     */
-    ushort overlayColorSpace;
+    ushort overlayColorSpace = 0;
     
     /**
         The global opacity level (0 = transparent, 100 = opaque)
     */
-    ushort opacity;
+    ushort opacity = 0;
     
     /**
         The global layer kind
     */
-    ubyte kind;
+    ubyte kind = 128u;
 
     /**
         Whether the layer data contains a transparency mask
     */
-    bool hasTransparencyMask;
+    bool hasTransparencyMask = false;
 }

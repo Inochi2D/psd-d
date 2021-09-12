@@ -19,10 +19,10 @@ T roundUpToMultiple(T)(T numToRound, T multOf) if (isIntegral!T) {
 }
 
 /**
-    Reounds a value down to a multiple
+    Rounds a value down to a multiple
 */
 pragma(inline, true)
-T roundDOwnToMultiple(T)(T numToRound, T multOf) if (isIntegral!T) {
+T roundDownToMultiple(T)(T numToRound, T multOf) if (isIntegral!T) {
     assert(isPowerOfTwo(multOf), "Expected power-of-two multiplier");
     return numToRound & ~(multOf - 1u);
 }

@@ -3,6 +3,7 @@ import std.stdio;
 
 public import psd.parser : parseDocument;
 public import psd.layer;
+public import psd.image_resources;
 import asdf;
 
 /**
@@ -77,6 +78,11 @@ public:
         Layers
     */
     Layer[] layers;
+    
+    /**
+        ImageResourcesData
+    */
+    ImageResourcesData imageResourcesData;
 
     /**
         Full image data encoded as 8-bit RGBA

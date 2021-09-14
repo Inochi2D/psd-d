@@ -431,6 +431,8 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
 
             layer.top = file.readValue!int;
             layer.left = file.readValue!int;
+
+            // NOTE: It breaks here WTF???
             layer.bottom = file.readValue!int;
             layer.right = file.readValue!int;
 
@@ -450,7 +452,7 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
             //layer.blendModeKey = cast(BlendingMode)file.readStr(4);
             layer.blendModeKey = file.readValue!uint;
             layer.opacity = file.readValue!ubyte;
-            layer.clipping = file.readValue!ubyte == 0;
+            layer.clipping = !file.readValue!bool;
             layer.flags = cast(LayerFlags)file.readValue!ubyte;
 
             file.skip(1);
@@ -566,6 +568,7 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
             // the PSD format sometimes includes the 4-byte length in its section size, and sometimes not.
             const uint additionalLayerInfoSize = extraDataLength - layerMaskDataLength - layerBlendingRangesDataLength - paddedNameLength - 8u;
             long toRead = additionalLayerInfoSize;
+            
             while (toRead > 0)
             {
                 const string signature = file.readStr(4);

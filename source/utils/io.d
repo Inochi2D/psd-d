@@ -10,8 +10,14 @@ public import std.stdio;
     Reads file value in big endian fashion
 */
 T readValue(T)(ref File file) {
-    // if (T.sizeof > file.size()-file.tell()) return T.init;
-    return bigEndianToNative!T(file.rawRead(new ubyte[T.sizeof])[0 .. T.sizeof]);
+    size_t currPos = file.tell();
+    T value = bigEndianToNative!T(file.rawRead(new ubyte[T.sizeof])[0 .. T.sizeof]);
+
+    // HACK: For some reason rawRead *sometimes* 
+    //       reads an extra byte without any warning
+    //       this ensures we don't do that.
+    if (file.tell() != currPos+T.sizeof) file.seek(currPos+T.sizeof);
+    return value;
 }
 
 /**
@@ -35,7 +41,7 @@ string readStr(ref File file, uint length) {
 */
 string peekStr(ref File file, uint length) {
     string val = file.readStr(length);
-    file.seek(-(length + 1), SEEK_CUR);
+    file.seek(-(cast(int)length), SEEK_CUR);
     return val;
 }
 
@@ -51,7 +57,7 @@ string readPascalStr(ref File file, uint readTo = 0) {
     }
 
     string str = file.readStr(length);
-    file.skip(extra);
+    if (extra > 0) file.skip(extra);
     return str[0..length];
 }
 

@@ -12,6 +12,7 @@ import psd;
 import std.exception;
 import std.format;
 import std.string;
+import psd.rle;
 
 /**
     Parses document
@@ -42,6 +43,72 @@ PSD parseDocument(ref File file) {
     parseImageDataSectionOffset(file, psd);
 
     return psd;
+}
+
+package(psd):
+void extractLayer(ref Layer layer) {
+    auto file = layer.filePtr;
+
+    // Skip empty layers
+    if (layer.width == 0 && layer.height == 0) return;
+
+    const size_t channelCount = layer.channels.length;
+    layer.data = new ubyte[layer.width*layer.height*channelCount];
+    
+    foreach(i; 0..channelCount) {
+        ChannelInfo* channel = &layer.channels[i];
+        file.seek(channel.fileOffset);
+
+        // HACK: To allow transparency to be put as RGBA
+        //       an offset is applied based on its layer type.
+        size_t offset = i;
+        if (channelCount > 3) {
+            switch(channel.type) {
+                case -1:
+                    offset = 3;
+                    break;
+                default:
+                    offset = channel.type;
+                    break;
+            }
+        }
+
+        const ushort compressionType = file.readValue!ushort;
+        switch(compressionType) {
+            //RAW
+            case 0:
+                // TODO: RAW decode
+                enforce(false, "RAW encoding not implemented yet.");
+                break;
+            
+            // RLE
+            case 1:
+
+                // RLE compressed data is preceded by a 2-byte data count for each scanline
+                uint rleDataSize;
+                foreach(_; 0..layer.height) {
+                    const ushort dataCount = file.readValue!ushort;
+                    rleDataSize += dataCount;
+                }
+
+                if (rleDataSize > 0) {
+
+                    // Read planar data
+                    ubyte[] rleData = new ubyte[rleDataSize];
+
+                    // We need to work around the same D bug as before.
+                    size_t readBegin = file.tell();
+                    file.rawRead(rleData);
+                    file.seek(readBegin+rleDataSize);
+
+                    // Decompress RLE
+                    decodeRLE(rleData, layer.data, cast(uint)offset, cast(uint)channelCount);
+                }
+                break;
+            default: assert(0, "Unsupported compression type.");
+        }
+
+    }
 }
 
 private:
@@ -426,7 +493,9 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
         layerMaskSection.layerCount = cast(uint)layerCount;
         layerMaskSection.layers = new Layer[layerCount];
 
-        foreach(layer; layerMaskSection.layers) {
+        foreach(i; 0..layerMaskSection.layers.length) {
+            Layer layer;
+            layer.filePtr = file;
             layer.type = LayerType.Any;
 
             layer.top = file.readValue!int;
@@ -441,7 +510,8 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
             const ushort channelCount = file.readValue!ushort;
             layer.channels = new ChannelInfo[channelCount];
 
-            foreach(channel; layer.channels) {
+            foreach(j; 0..layer.channels.length) {
+                ChannelInfo* channel = &layer.channels[j];
                 channel.type = file.readValue!short;
                 channel.dataLength = file.readValue!uint;
             }
@@ -568,7 +638,7 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
             // the PSD format sometimes includes the 4-byte length in its section size, and sometimes not.
             const uint additionalLayerInfoSize = extraDataLength - layerMaskDataLength - layerBlendingRangesDataLength - paddedNameLength - 8u;
             long toRead = additionalLayerInfoSize;
-            
+
             while (toRead > 0)
             {
                 const string signature = file.readStr(4);
@@ -614,15 +684,19 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
 
                 toRead -= 3*uint.sizeof + length;
             }
+
+            layerMaskSection.layers[i] = layer;
             writeln(file.tell(), ": ", layer.name, " : ", layer.type);
         }
 
 
         // walk through the layers and channels, but don't extract their data just yet. only save the file offset for extracting the
         // data later.
-        foreach (layer; layerMaskSection.layers)
+        foreach (i; 0..layerMaskSection.layers.length)
         {            
-            foreach(channel; layer.channels) {
+            Layer* layer = &layerMaskSection.layers[i];
+            foreach(j; 0..layer.channels.length) {
+                ChannelInfo* channel = &layer.channels[j];
                 channel.fileOffset = cast(uint)file.tell();
                 file.skip(channel.dataLength);
             }

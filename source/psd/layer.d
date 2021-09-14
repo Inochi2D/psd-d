@@ -1,5 +1,7 @@
 module psd.layer;
+import psd.parser;
 import asdf;
+import std.stdio : File;
 
 /**
     Photoshop blending modes
@@ -254,6 +256,11 @@ enum LayerFlags : ubyte {
     A layer
 */
 struct Layer {
+package(psd):
+    File filePtr;
+
+public:
+
     /**
         Parent of layer
     */
@@ -419,6 +426,13 @@ struct Layer {
     */
     size_t area() {
         return width * height;
+    }
+
+    /**
+        Extracts the layer image
+    */
+    void extractLayerImage() {
+        extractLayer(this);
     }
 }
 

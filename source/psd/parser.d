@@ -154,8 +154,8 @@ void parseHeader(ref File file, ref PSD psd) {
                                 COLOR MODE DATA
 */
 void parseColorModeSection(ref File file, ref PSD psd) {
-    psd.colorModeDataSectionOffset = file.tell();
     psd.colorModeDataSectionLength = file.readValue!uint;
+    psd.colorModeDataSectionOffset = file.tell();
 
     file.skip(psd.colorModeDataSectionLength);
 }
@@ -177,8 +177,8 @@ T readPaddedValue(T)(ref File file, T multipleOf = 2, T addTo = 0) {
 }
 
 void parseImageResourceSection(ref File file, ref PSD psd) {
-    psd.imageResourceSectionOffset = file.tell();
     psd.imageResourceSectionLength = file.readValue!uint;
+    psd.imageResourceSectionOffset = file.tell();
 
     // TODO: read
     ulong leftToRead = psd.imageResourceSectionLength;
@@ -467,8 +467,8 @@ template ApplyMaskData(T)
 
 
 void parseLayerMaskInfoSection(ref File file, ref PSD psd) {
-    psd.layerMaskInfoSectionOffset = file.tell();
     psd.layerMaskInfoSectionLength = file.readValue!uint;
+    psd.layerMaskInfoSectionOffset = file.tell();
     
     // Parse the length of the layer info section
     uint layerInfoSectionLength = file.readValue!uint;

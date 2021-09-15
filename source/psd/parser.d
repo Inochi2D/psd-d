@@ -751,7 +751,6 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
             }
 
             layerMaskSection.layers[i] = layer;
-            writeln(file.tell(), ": ", layer.name, " : ", layer.type);
         }
 
 

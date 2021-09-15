@@ -16,6 +16,7 @@ psd-d-test-*
 
 test.json
 *.psd
+*.psd.bak
 dub.selections.json
 *.tga
 *.png

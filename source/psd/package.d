@@ -1,7 +1,9 @@
 module psd;
+import std.stdio;
 
-public import psd.parse : parsePSD;
+public import psd.parser : parseDocument;
 public import psd.layer;
+public import psd.image_resources;
 import asdf;
 
 /**
@@ -22,6 +24,21 @@ enum ColorMode : ushort {
     A photoshop file
 */
 struct PSD {
+package(psd):
+    size_t colorModeDataSectionOffset;
+    size_t colorModeDataSectionLength;
+
+    size_t imageResourceSectionOffset;
+    size_t imageResourceSectionLength;
+
+    size_t layerMaskInfoSectionOffset;
+    size_t layerMaskInfoSectionLength;
+
+    size_t imageDataSectionOffset;
+    size_t imageDataSectionLength;
+
+public:
+
     /**
         Amount of channels in file
     */
@@ -40,7 +57,7 @@ struct PSD {
     /**
         Bits per channel
     */
-    ushort bpc;
+    ushort bitsPerChannel;
 
     /**
         Color mode of document
@@ -61,6 +78,11 @@ struct PSD {
         Layers
     */
     Layer[] layers;
+    
+    /**
+        ImageResourcesData
+    */
+    ImageResourcesData imageResourcesData;
 
     /**
         Full image data encoded as 8-bit RGBA
@@ -68,4 +90,3 @@ struct PSD {
     @serdeIgnore
     ubyte[] fullImage;
 }
-

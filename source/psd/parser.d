@@ -121,6 +121,8 @@ void extractLayer(ref Layer layer) {
                     file.seek(readBegin+rleDataSize);
 
                     // Decompress RLE
+                    // FIXME:  We're assuming psd.channelsPerBit == 8 right now, and that's not 
+                    //         always the case.
                     channel.data = new ubyte[layer.width*layer.height];
                     decodeRLE(rleData, channel.data);
                 }

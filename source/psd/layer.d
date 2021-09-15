@@ -1,6 +1,5 @@
 module psd.layer;
 import psd.parser;
-import asdf;
 import std.stdio : File;
 
 /**
@@ -219,7 +218,6 @@ struct ChannelInfo {
     /**
         The data of the channel
     */
-    @serdeIgnore
     ubyte[] data;
 
     /**
@@ -360,13 +358,11 @@ public:
     /**
         Flags for the layer
     */
-    @serdeProxy!uint
     LayerFlags flags;
 
     /**
         The data of the layer
     */
-    @serdeIgnore
     ubyte[] data;
 
     /**

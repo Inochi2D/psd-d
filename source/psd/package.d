@@ -4,7 +4,6 @@ import std.stdio;
 public import psd.parser : parseDocument;
 public import psd.layer;
 public import psd.image_resources;
-import asdf;
 
 /**
     PSD Color Modes
@@ -87,6 +86,5 @@ public:
     /**
         Full image data encoded as 8-bit RGBA
     */
-    @serdeIgnore
     ubyte[] fullImage;
 }

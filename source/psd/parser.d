@@ -18,7 +18,7 @@ import psd.rle;
     Parses document
 */
 PSD parseDocument(string fileName) {
-    auto file = File(fileName, "r");
+    auto file = File(fileName, "rb");
     return parseDocument(file);
 }
 

@@ -96,8 +96,8 @@ void extractLayer(ref Layer layer) {
         switch(compressionType) {
             //RAW
             case 0:
-                // TODO: RAW decode
-                enforce(false, "RAW encoding not implemented yet.");
+                channel.data = new ubyte[layer.width*layer.height];
+                file.rawRead(channel.data);
                 break;
             
             // RLE

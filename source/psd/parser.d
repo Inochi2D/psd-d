@@ -45,7 +45,26 @@ PSD parseDocument(ref File file) {
     return psd;
 }
 
+
+
 package(psd):
+
+/**
+    Finds the index of the channel
+*/
+uint findChannel(Layer* layer, ChannelType channelType)
+{
+	for (uint i = 0; i < layer.channels.length; ++i)
+	{
+		const ChannelInfo* channel = &layer.channels[i];
+		if ((channel.dataLength > 0) && channel.type == channelType)
+			return i;
+	}
+
+	return ChannelType.INVALID;
+}
+
+
 void extractLayer(ref Layer layer) {
     auto file = layer.filePtr;
 
@@ -53,7 +72,7 @@ void extractLayer(ref Layer layer) {
     if (layer.width == 0 && layer.height == 0) return;
 
     const size_t channelCount = layer.channels.length;
-    layer.data = new ubyte[layer.width*layer.height*channelCount];
+    //layer.data = new ubyte[layer.width*layer.height*channelCount];
     
     foreach(i; 0..channelCount) {
         ChannelInfo* channel = &layer.channels[i];
@@ -102,13 +121,57 @@ void extractLayer(ref Layer layer) {
                     file.seek(readBegin+rleDataSize);
 
                     // Decompress RLE
-                    decodeRLE(rleData, layer.data, cast(uint)offset, cast(uint)channelCount);
+                    channel.data = new ubyte[layer.width*layer.height];
+                    decodeRLE(rleData, channel.data);
                 }
                 break;
             default: assert(0, "Unsupported compression type.");
         }
 
     }
+
+    // Transcode to RGBA
+    auto rgba = new ubyte[layer.width*layer.height*channelCount];
+    auto rgbaPtr = rgba.ptr;
+    
+
+    // Channel indices.
+    auto aI = findChannel(&layer, ChannelType.TRANSPARENCY_MASK);
+    auto rI = findChannel(&layer, ChannelType.R);
+    auto gI = findChannel(&layer, ChannelType.G);
+    auto bI = findChannel(&layer, ChannelType.B);
+    
+    
+    auto a = layer.channels[aI].data.ptr;
+    auto r = layer.channels[rI].data.ptr;
+    auto g = layer.channels[gI].data.ptr;
+    auto b = layer.channels[bI].data.ptr;
+
+    for (size_t j = 0; j < rgba.length; j += 4)
+    {
+        rgba[j+0] = *r++;
+        rgba[j+1] = *g++;
+        rgba[j+2] = *b++;
+        rgba[j+3] = *a++;
+    }
+
+    // 
+    //foreach (size_t y; 0 .. layer.height)
+    //{
+    //    ubyte* a = layer.data.ptr + (y * layer.width * channelCount) + (layer.width * aI);
+    //    ubyte* r = layer.data.ptr + (y * layer.width * channelCount) + (layer.width * rI);
+    //    ubyte* g = layer.data.ptr + (y * layer.width * channelCount) + (layer.width * gI);
+    //    ubyte* b = layer.data.ptr + (y * layer.width * channelCount) + (layer.width * bI);
+    //    foreach (size_t x; 0 .. layer.width)
+    //    {
+    //        *rgbaPtr++ = *r++;
+    //        *rgbaPtr++ = *g++;
+    //        *rgbaPtr++ = *b++;
+    //        *rgbaPtr++ = *a++;   
+    //    }
+    //}
+
+    layer.data = rgba;
 }
 
 private:

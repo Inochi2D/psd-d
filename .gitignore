@@ -21,3 +21,7 @@ dub.selections.json
 *.tga
 *.png
 .vscode/
+
+test/
+.DS_Store
+*.psd.bak

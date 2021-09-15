@@ -1,17 +1,28 @@
 import std.stdio;
 import psd;
 import asdf;
-import std.file : write;
+import std.file : exists, mkdir;
 import imagefmt;
+import std.path;
 
-void main()
+void main(string[] args)
 {
-	PSD doc = parseDocument("luna.psd");
+	string file = args[1];
+	string outputFolder = file.stripExtension();
+	PSD doc = parseDocument(file);
 
+	if (!outputFolder.exists) {
+		mkdir(outputFolder);
+	}
+	
 	foreach(layer; doc.layers) {
+		
+		// Skip non-image layuers
+		if (layer.type != LayerType.Any) continue;
+
 		layer.extractLayerImage();
-		write_image("test/"~layer.name~".png", layer.width, layer.height, layer.data, 4);
+		write_image(buildPath(outputFolder, layer.name~".png"), layer.width, layer.height, layer.data, 4);
 	}
 
-	write("test/test.json", serializeToJsonPretty(doc));
+	write(buildPath(outputFolder, outputFolder~".json"), serializeToJsonPretty(doc));
 }

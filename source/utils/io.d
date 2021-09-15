@@ -12,11 +12,6 @@ public import std.stdio;
 T readValue(T)(ref File file) {
     size_t currPos = file.tell();
     T value = bigEndianToNative!T(file.rawRead(new ubyte[T.sizeof])[0 .. T.sizeof]);
-
-    // HACK: For some reason rawRead *sometimes* 
-    //       reads an extra byte without any warning
-    //       this ensures we don't do that.
-    if (file.tell() != currPos+T.sizeof) file.seek(currPos+T.sizeof);
     return value;
 }
 

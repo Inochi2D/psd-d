@@ -116,9 +116,7 @@ void extractLayer(ref Layer layer) {
                     ubyte[] rleData = new ubyte[rleDataSize];
 
                     // We need to work around the same D bug as before.
-                    size_t readBegin = file.tell();
                     file.rawRead(rleData);
-                    file.seek(readBegin+rleDataSize);
 
                     // Decompress RLE
                     // FIXME:  We're assuming psd.channelsPerBit == 8 right now, and that's not 

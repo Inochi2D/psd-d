@@ -582,8 +582,7 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
             auto blendModeSignature = file.readStr(4);
             enforce(blendModeSignature == "8BIM", "Layer mask info section seems to be corrupt, signature does not match \"8BIM\". (was \"%s\")".format(blendModeSignature));
 
-            //layer.blendModeKey = cast(BlendingMode)file.readStr(4);
-            layer.blendModeKey = file.readValue!uint;
+            layer.blendModeKey = cast(BlendingMode)file.readStr(4);
             layer.opacity = file.readValue!ubyte;
             layer.clipping = !file.readValue!bool;
             layer.flags = cast(LayerFlags)file.readValue!ubyte;

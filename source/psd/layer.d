@@ -327,8 +327,7 @@ public:
     /**
         Blending mode
     */
-    //BlendingMode blendModeKey;
-    uint blendModeKey;
+    BlendingMode blendModeKey;
 
     /**
         Channels in layer

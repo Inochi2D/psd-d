@@ -734,7 +734,7 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
 
                     // If there's a unicode name we may as well use that here.
                     import std.utf : toUTF8;
-                    layer.name = utf16Name.toUTF8;
+                    layer.name = utf16Name.toUTF8[0..$-1]; // strip null character as well
 
                     // skip possible padding bytes
                     file.skip(length - 4u - characterCountWithoutNull * ushort.sizeof);

@@ -131,28 +131,29 @@ void extractLayer(ref Layer layer) {
     }
 
     // Transcode to RGBA
-    auto rgba = new ubyte[layer.width*layer.height*channelCount];
-    auto rgbaPtr = rgba.ptr;
+    auto rgba = new ubyte[layer.width*layer.height*4];
     
+    ubyte*[] channelptrs;
+    if (channelCount > 0) channelptrs ~= layer.channels[findChannel(&layer, ChannelType.R)].data.ptr;
+    if (channelCount > 1) channelptrs ~= layer.channels[findChannel(&layer, ChannelType.G)].data.ptr;
+    if (channelCount > 2) channelptrs ~= layer.channels[findChannel(&layer, ChannelType.B)].data.ptr;
+    if (channelCount > 3) channelptrs ~= layer.channels[findChannel(&layer, ChannelType.TRANSPARENCY_MASK)].data.ptr;
+    
+    // Iterate over every pixel, fill out any missing pixels to fill out RGBA
+    for (size_t j = 0; j < rgba.length; j += 4) {
+        foreach(k; 0..channelCount) {
+            rgba[j+k] = *channelptrs[k];
+            channelptrs[k]++;
+        }
 
-    // Channel indices.
-    auto aI = findChannel(&layer, ChannelType.TRANSPARENCY_MASK);
-    auto rI = findChannel(&layer, ChannelType.R);
-    auto gI = findChannel(&layer, ChannelType.G);
-    auto bI = findChannel(&layer, ChannelType.B);
-    
-    
-    auto a = layer.channels[aI].data.ptr;
-    auto r = layer.channels[rI].data.ptr;
-    auto g = layer.channels[gI].data.ptr;
-    auto b = layer.channels[bI].data.ptr;
+        // Fill out missing data with 0s
+        if (channelCount < 4) {
+            foreach(c; channelCount..4) {
 
-    for (size_t j = 0; j < rgba.length; j += 4)
-    {
-        rgba[j+0] = *r++;
-        rgba[j+1] = *g++;
-        rgba[j+2] = *b++;
-        rgba[j+3] = *a++;
+                // If it's a missing alpha channel, fill it out with 1's
+                rgba[j+c] = c == 4 ? 1 : 0;
+            }
+        }
     }
 
     // 

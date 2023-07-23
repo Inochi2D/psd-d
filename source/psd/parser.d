@@ -585,7 +585,8 @@ LayerMaskSection* parseLayer(ref File file, ref PSD psd, ulong sectionOffset, ui
 
             layer.blendModeKey = cast(BlendingMode)file.readStr(4);
             layer.opacity = file.readValue!ubyte;
-            layer.clipping = !file.readValue!bool;
+            ubyte clipping = file.readValue!ubyte;
+            layer.clipping = clipping != 0;
             layer.flags = cast(LayerFlags)file.readValue!ubyte;
 
             file.skip(1);
